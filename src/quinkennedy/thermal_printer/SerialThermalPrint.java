@@ -61,7 +61,6 @@ public class SerialThermalPrint {
 	 */
 	public boolean verbose = false;
 
-	private PApplet parent;
 	private Serial printer;
 	private Method onPrinterReadyMethod;
 	private boolean bConnected = false;
@@ -88,7 +87,7 @@ public class SerialThermalPrint {
 		welcome();
 		setupMethods();
 	}
-
+	
 	private void welcome() {
 		System.out
 				.println("##library.name## ##library.prettyVersion## by ##author##");
@@ -107,7 +106,7 @@ public class SerialThermalPrint {
 	  //------------------------------------------------
 	  private void setupMethods(){
 	    try {
-	      onPrinterReadyMethod = parent.getClass().getMethod("onPrinterReady", new Class[]{});
+	      onPrinterReadyMethod = myParent.getClass().getMethod("onPrinterReady", new Class[]{});
 	    } catch (Exception e){
 	      //we need to be careful not to make people think they have a legitimate error
 	      System.out.println("I suggest you implement an onPrinterReady() method so you know when you can send data");
@@ -115,7 +114,11 @@ public class SerialThermalPrint {
 	  }
 	  
 	  public void connect(String a_sSerialDevice, int a_nBaud){
-	    printer = new Serial(parent, a_sSerialDevice, a_nBaud);
+	    printer = new Serial(myParent, a_sSerialDevice, a_nBaud);
+	  }
+	  
+	  public void usePrinter(Serial s){
+		  printer = s;
 	  }
 	  
 	  public static String[] list(){
@@ -123,7 +126,7 @@ public class SerialThermalPrint {
 	  }
 
 	  private void sendImageChunk(){
-		    parent.println("sending image chunk, start row: " + imageRowOffset);
+		    myParent.println("sending image chunk, start row: " + imageRowOffset);
 		    int rowBits = Math.min(MAX_WIDTH, currImage.width);
 		    int rowBytes = (int)Math.ceil(rowBits/8);
 		    int numRows = Math.min(IMAGE_CHUNK_HEIGHT, currImage.height - imageRowOffset);
@@ -164,7 +167,7 @@ public class SerialThermalPrint {
 		    printer.write(bytes);
 
 		    if (imageRowOffset >= currImage.height){
-		      parent.println("finished image");
+		      myParent.println("finished image");
 		      currImage = null;
 		      imageRowOffset = 0;
 		    }
@@ -187,11 +190,11 @@ public class SerialThermalPrint {
 	  }
 
 	  public void serialEvent(Serial port){
-		parent.println("got serial event");
+		myParent.println("got serial event");
 	    if (port != printer){
 	      return;
 	    }
-	    if (disregardFirst && !sawFirst && parent.millis() < disregardTimeout){
+	    if (disregardFirst && !sawFirst && myParent.millis() < disregardTimeout){
 	        sawFirst = true;
 	        return;
 	      }
@@ -212,7 +215,7 @@ public class SerialThermalPrint {
 		  printerReady = true;
 	    if (onPrinterReadyMethod != null){
 	      try {
-	        onPrinterReadyMethod.invoke(parent);
+	        onPrinterReadyMethod.invoke(myParent);
 	      } catch( Exception e ){
 	        System.err.println(e);
 	        System.err.println("onPrinterReady invoke failed, disabling :(");
@@ -223,7 +226,7 @@ public class SerialThermalPrint {
 
 	  public boolean print(PImage a_iImage){
 	    if (!printerReady){
-	        parent.println("not ready");
+	        myParent.println("not ready");
 	      return false;
 	    }
 	    printerReady = false;
